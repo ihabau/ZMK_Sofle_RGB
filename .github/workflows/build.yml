@@ -22,7 +22,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install west
-        run: pip install west
+        run: pip install west pyelftools
 
       - name: Install Zephyr SDK
         run: |

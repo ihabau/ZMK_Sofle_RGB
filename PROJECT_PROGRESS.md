@@ -3,7 +3,7 @@
 ## Project Overview
 
 **Hardware:** PandaKB Sofle Choc V1 (Nice!Nano v2)
-**Firmware:** ZMK (darknao/zmk fork with per-key RGB support)
+**Repository:** https://github.com/ihabau/ZMK_Sofle_RGB
 **Last Updated:** 2026-07-12
 
 ---
@@ -11,138 +11,87 @@
 ## Goals
 
 1. ✅ **4 Layers** - QWERTY, Lower, Raise, Adjust
-2. ✅ **Per-Key RGB** - Individual LED per switch on pin D0 (P0.08)
-3. ✅ **LCD on Both Sides** - Bongo cat, WPM, battery indicator, BLE/USB indicator, layer indicator
+2. ⚠️ **Per-Key RGB** - Individual LED per switch on pin D0 (P0.08) - `per-key-rgb` branch
+3. ⚠️ **LCD on Both Sides** - Bongo cat, WPM, battery indicator, BLE/USB indicator, layer indicator - `main` branch
 4. ✅ **GitHub Build Workflow** - Automated firmware builds
 
 ---
 
-## Configuration Files
+## Branch Strategy
 
-### 1. `config/west.yml`
-- **Changed:** ZMK remote from `zmkfirmware/zmk` to `darknao/zmk`
-- **Branch:** `rgb-layer-25.08` (per-key RGB support)
-- **Modules:** zmk-nice-oled (unchanged)
+**Important:** Per-key RGB (darknao/zmk fork) and nice_oled display module are **incompatible**. They modify different ZMK versions.
 
-### 2. `config/sofle.conf`
-- **Added:** `CONFIG_EXPERIMENTAL_RGB_LAYER=y` (enables per-key RGB)
-- **Added:** `CONFIG_ZMK_BEHAVIORS_QUEUE_SIZE=256` (required for underglow-layer)
-- **Retained:** All display and nice_oled widget configs
+### Branch: `main`
+- **ZMK:** zmkfirmware/zmk v0.3
+- **Display:** nice_oled module (bongo cat, WPM, battery, BLE/USB, layer, modifiers, HID)
+- **RGB:** Standard underglow (all 29 LEDs same color per layer)
+- **Build:** Uses zmkfirmware reusable workflow
 
-### 3. `config/sofle.keymap`
-- **Added:** `#include <dt-bindings/zmk/rgb_colors.h>`
-- **Added:** `underglow-layer` devicetree node with per-layer color mappings:
-  - **Base (0):** RED
-  - **Lower (1):** GREEN
-  - **Raise (2):** BLUE
-  - **Adjust (3):** PURPLE
-- **Note:** LED count = 29 (matches chain-length in overlay)
-
-### 4. `.github/workflows/build.yml`
-- **Changed:** Custom build workflow (can't use zmkfirmware's reusable workflow with fork)
-- **Builds:** Left half, Right half, Settings reset
-- **Artifacts:** Uploads .uf2 files to GitHub Releases
-
-### 5. `config/boards/nice_nano_v2.overlay`
-- **Unchanged:** SPI3 on P0.08, WS2812, chain-length = 29, GRB color order
+### Branch: `per-key-rgb`
+- **ZMK:** darknao/zmk rgb-layer-25.08 (based on moergo-sc/zmk Glove80)
+- **Display:** Basic ZMK display (text-based widgets, no bongo cat)
+- **RGB:** Per-key RGB layer colors (29 LEDs, individually controlled)
+- **Build:** Custom workflow with Zephyr SDK installation
 
 ---
 
-## Build Instructions
+## Per-Key RGB Colors (per-key-rgb branch)
 
-### GitHub Actions (Recommended)
-1. Push to `master` branch
-2. Workflow runs automatically
-3. Download firmware from Releases tab:
-   - `sofle_left.uf2` - Left half
-   - `sofle_right.uf2` - Right half
-   - `settings_reset.uf2` - Reset settings
+| Layer | Color |
+|-------|-------|
+| Base (0) | RED |
+| Lower (1) | GREEN |
+| Raise (2) | BLUE |
+| Adjust (3) | PURPLE |
 
-### Local Build
-```bash
-# Initialize west
-pip3 install west
-west init -l config
-west update
-west zephyr-export
-
-# Build left half
-west build -s zmk/app -b nice_nano_v2 -- \
-  -DSHIELD="sofle_left nice_oled" \
-  -DCONFIG_ZMK_STUDIO=y
-
-# Build right half
-west build -s zmk/app -b nice_nano_v2 -- \
-  -DSHIELD="sofle_right nice_oled"
-
-# Build settings reset
-west build -s zmk/app -b nice_nano_v2 -- \
-  -DSHIELD="settings_reset"
-```
+To activate: cycle RGB effects with `RGB_EFF` key until "layer indicators" mode.
 
 ---
 
-## Flashing Instructions
+## Configuration Files (per-key-rgb branch)
 
-### Prerequisites
-- Install ZMK.uf2 or use web flasher at https://zmk.dev/flash
-- Put Nice!Nano in bootloader mode (double-click reset button)
+### `config/west.yml`
+- Uses `darknao/zmk` (rgb-layer-25.08 branch) for per-key RGB
+- Removed `zmk-nice-oled` module (incompatible with darknao fork)
 
-### Flash Process
-1. Connect Nice!Nano via USB
-2. Double-click reset button (enters bootloader mode)
-3. Drag .uf2 file to the mass storage device
-4. Device will reboot automatically
+### `config/sofle.conf`
+- Added `CONFIG_EXPERIMENTAL_RGB_LAYER=y`
+- Added `CONFIG_ZMK_BEHAVIORS_QUEUE_SIZE=256`
+- Uses basic ZMK display (no custom status screen)
 
-### First Flash
-- Flash **settings_reset.uf2** first to clear old settings
-- Then flash the appropriate half firmware
+### `config/sofle.keymap`
+- Added `#include <dt-bindings/zmk/rgb_colors.h>`
+- Added `underglow-layer` devicetree node with 29 LEDs per side
+- Colors: RED (base), GREEN (lower), BLUE (raise), PURPLE (adjust)
 
----
-
-## Per-Key RGB Colors
-
-| Layer | Color | Hex |
-|-------|-------|-----|
-| Base (0) | RED | `0xFF0000` |
-| Lower (1) | GREEN | `0x00FF00` |
-| Raise (2) | BLUE | `0x0000FF` |
-| Adjust (3) | PURPLE | `0x800080` |
-
-### Available Colors
-`RED`, `GREEN`, `BLUE`, `PURPLE`, `TEAL`, `ORANGE`, `PINK`, `YELLOW`, `WHITE`, `OFF`
-
-### Activating Per-Key Mode
-After flashing, use `&rgb_ug RGB_EFF` to cycle effects until "layer indicators" mode is active.
+### `config/boards/nice_nano_v2.overlay`
+- SPI3 on P0.08, WS2812, chain-length = 29, GRB color order
 
 ---
 
-## Progress Log
+## Build Status
 
-### 2026-07-12
-- ✅ Switched to darknao/zmk fork for per-key RGB support
-- ✅ Updated west.yml manifest
-- ✅ Added per-key RGB config to sofle.conf
-- ✅ Added underglow-layer definitions to keymap
-- ✅ Created custom GitHub Actions build workflow
-- ✅ Updated build.yaml
-- ✅ Created this progress document
+| Branch | Build Workflow | Status |
+|--------|---------------|--------|
+| `main` | zmkfirmware reusable workflow | ❌ Failing - needs investigation |
+| `per-key-rgb` | Custom workflow with Zephyr SDK | ❌ Failing - needs investigation |
 
 ---
 
 ## Known Issues
 
-1. **LED Count:** The underglow-layer bindings have 58 entries but chain-length is 29. Need to verify actual per-key LED count on PCB.
-2. **Color Customization:** Colors can be changed in keymap by editing the `&ug COLOR` values.
+1. **Build failures:** Both branches failing to build. Need to check error logs.
+2. **nice_oled vs per-key RGB:** Cannot use both simultaneously (different ZMK base versions).
+3. **LED count:** 29 per side, 58 total. Underglow-layer bindings match chain-length of 29.
 
 ---
 
-## Next Steps
+## Flashing Instructions
 
-1. **Verify LED Count:** Confirm actual number of per-key LEDs on Sofle Choc V1 PCB
-2. **Test Build:** Push to GitHub and verify workflow builds successfully
-3. **Flash & Test:** Flash firmware and verify per-key RGB works
-4. **Customize Colors:** Adjust layer colors to preference
+1. Go to GitHub Releases: https://github.com/ihabau/ZMK_Sofle_RGB/releases
+2. Download the .uf2 files for your chosen branch
+3. Flash settings_reset.uf2 first (double-click reset on Nice!Nano, drag to mass storage)
+4. Then flash sofle_left.uf2 or sofle_right.uf2 to each half
 
 ---
 
@@ -150,5 +99,5 @@ After flashing, use `&rgb_ug RGB_EFF` to cycle effects until "layer indicators" 
 
 - [ZMK Documentation](https://zmk.dev/docs)
 - [darknao/zmk Per-Key RGB](https://github.com/darknao/zmk/tree/rgb-layer-25.08)
+- [nice_oled Module](https://github.com/mctechnology17/zmk-nice-oled)
 - [Sofle Keyboard Build Guide](https://josefadamcik.github.io/SofleKeyboard/build_guide_choc.html)
-- [ZMK Flashing Guide](https://zmk.dev/docs/features/flashing)
