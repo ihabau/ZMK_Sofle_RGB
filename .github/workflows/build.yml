@@ -12,25 +12,26 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-dev-arm:stable
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: West Init
-        run: |
-          pip3 install west
-          west init -l config
-          west update
-          west zephyr-export
+        run: west init -l config
+
+      - name: West Update
+        run: west update
+
+      - name: West Zephyr Export
+        run: west zephyr-export
 
       - name: Build Left Half
         run: |
           west build -s zmk/app -b nice_nano_v2 -- \
             -DSHIELD="sofle_left nice_oled" \
-            -DCONFIG_ZMK_STUDIO=y \
-            -DZMK_CONFIG="config"
-        env:
-          ZMK_CONFIG: config
+            -DCONFIG_ZMK_STUDIO=y
 
       - name: Rename Left Firmware
         run: cp build/zephyr/zmk.uf2 sofle_left.uf2
@@ -41,22 +42,18 @@ jobs:
       - name: Build Right Half
         run: |
           west build -s zmk/app -b nice_nano_v2 -- \
-            -DSHIELD="sofle_right nice_oled" \
-            -DZMK_CONFIG="config"
-        env:
-          ZMK_CONFIG: config
+            -DSHIELD="sofle_right nice_oled"
 
       - name: Rename Right Firmware
         run: cp build/zephyr/zmk.uf2 sofle_right.uf2
 
+      - name: Clean Build
+        run: rm -rf build
+
       - name: Build Settings Reset
         run: |
-          rm -rf build
           west build -s zmk/app -b nice_nano_v2 -- \
-            -DSHIELD="settings_reset" \
-            -DZMK_CONFIG="config"
-        env:
-          ZMK_CONFIG: config
+            -DSHIELD="settings_reset"
 
       - name: Rename Settings Reset
         run: cp build/zephyr/zmk.uf2 settings_reset.uf2

@@ -8,7 +8,7 @@ manifest:
     - name: zmk
       remote: darknao
       revision: rgb-layer-25.08
-      import: true
+      import: app/west.yml
     - name: zmk-nice-oled
       remote: mctechnology17
       revision: main
