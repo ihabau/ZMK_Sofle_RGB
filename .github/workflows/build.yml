@@ -3,7 +3,7 @@ name: Build ZMK Firmware
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 permissions:
@@ -11,64 +11,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container:
-      image: zmkfirmware/zmk-dev-arm:stable
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@v0.3
 
-      - name: West Init
-        run: west init -l config
-
-      - name: West Update
-        run: west update
-
-      - name: West Zephyr Export
-        run: west zephyr-export
-
-      - name: Build Left Half
-        run: |
-          west build -s zmk/app -b nice_nano_v2 -- \
-            -DSHIELD="sofle_left nice_oled" \
-            -DCONFIG_ZMK_STUDIO=y
-
-      - name: Rename Left Firmware
-        run: cp build/zephyr/zmk.uf2 sofle_left.uf2
-
-      - name: Clean Build
-        run: rm -rf build
-
-      - name: Build Right Half
-        run: |
-          west build -s zmk/app -b nice_nano_v2 -- \
-            -DSHIELD="sofle_right nice_oled"
-
-      - name: Rename Right Firmware
-        run: cp build/zephyr/zmk.uf2 sofle_right.uf2
-
-      - name: Clean Build
-        run: rm -rf build
-
-      - name: Build Settings Reset
-        run: |
-          west build -s zmk/app -b nice_nano_v2 -- \
-            -DSHIELD="settings_reset"
-
-      - name: Rename Settings Reset
-        run: cp build/zephyr/zmk.uf2 settings_reset.uf2
-
-      - name: Upload Firmware Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware
-          path: |
-            sofle_left.uf2
-            sofle_right.uf2
-            settings_reset.uf2
-
-  create_release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+  create_release_master:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -81,13 +27,10 @@ jobs:
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Create Release with firmware
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.date.outputs.date }}-${{ github.sha }}
-          name: Firmware ${{ steps.date.outputs.date }}
+          name: Firmware ${{ steps.date.outputs.date }} - main
           body: Build from commit ${{ github.sha }}
-          files: |
-            sofle_left.uf2
-            sofle_right.uf2
-            settings_reset.uf2
+          files: '*.uf2'
