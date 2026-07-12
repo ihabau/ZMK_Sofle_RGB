@@ -1,16 +1,11 @@
 manifest:
   remotes:
-    - name: zmkfirmware
-      url-base: https://github.com/zmkfirmware
-    - name: mctechnology17
-      url-base: https://github.com/mctechnology17
+    - name: darknao
+      url-base: https://github.com/darknao
   projects:
     - name: zmk
-      remote: zmkfirmware
-      revision: v0.3
+      remote: darknao
+      revision: rgb-layer-25.08
       import: app/west.yml
-    - name: zmk-nice-oled
-      remote: mctechnology17
-      revision: main
   self:
     path: config

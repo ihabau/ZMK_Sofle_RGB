@@ -1,9 +1,9 @@
-name: Build ZMK Firmware
+name: Build ZMK Firmware (Per-Key RGB)
 
 on:
   push:
     branches:
-      - main
+      - per-key-rgb
   workflow_dispatch:
 
 permissions:
@@ -11,26 +11,96 @@ permissions:
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@v0.3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  create_release_master:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install west
+        run: pip install west
+
+      - name: Install Zephyr SDK
+        run: |
+          cd /tmp
+          wget -q https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.9/zephyr-sdk-0.16.9_linux-x86_64_minimal.tar.xz
+          tar xf zephyr-sdk-0.16.9_linux-x86_64_minimal.tar.xz
+          cd zephyr-sdk-0.16.9
+          ./setup.sh -t arm-zephyr-eabi -c
+
+      - name: West Init
+        run: west init -l config
+
+      - name: West Update
+        run: west update
+
+      - name: West Zephyr Export
+        run: west zephyr-export
+
+      - name: Build Left Half
+        run: >
+          west build -s zmk/app -b nice_nano_v2 --
+          -DSHIELD="sofle_left"
+
+      - name: Rename Left Firmware
+        run: cp build/zephyr/zmk.uf2 sofle_left.uf2
+
+      - name: Clean Build
+        run: rm -rf build
+
+      - name: Build Right Half
+        run: >
+          west build -s zmk/app -b nice_nano_v2 --
+          -DSHIELD="sofle_right"
+
+      - name: Rename Right Firmware
+        run: cp build/zephyr/zmk.uf2 sofle_right.uf2
+
+      - name: Clean Build
+        run: rm -rf build
+
+      - name: Build Settings Reset
+        run: >
+          west build -s zmk/app -b nice_nano_v2 --
+          -DSHIELD="settings_reset"
+
+      - name: Rename Settings Reset
+        run: cp build/zephyr/zmk.uf2 settings_reset.uf2
+
+      - name: Upload Firmware Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-per-key-rgb
+          path: |
+            sofle_left.uf2
+            sofle_right.uf2
+            settings_reset.uf2
+
+  create_release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/per-key-rgb'
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download firmware artifacts
         uses: actions/download-artifact@v4
         with:
-          name: firmware
+          name: firmware-per-key-rgb
 
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Create Release with firmware
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.date.outputs.date }}-${{ github.sha }}
-          name: Firmware ${{ steps.date.outputs.date }} - main
-          body: Build from commit ${{ github.sha }}
-          files: '*.uf2'
+          tag_name: per-key-rgb-${{ steps.date.outputs.date }}-${{ github.sha }}
+          name: Per-Key RGB Firmware ${{ steps.date.outputs.date }}
+          body: Build from commit ${{ github.sha }} (per-key RGB branch)
+          files: |
+            sofle_left.uf2
+            sofle_right.uf2
+            settings_reset.uf2
