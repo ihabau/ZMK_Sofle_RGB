@@ -6,6 +6,8 @@ Wireless Sofle Choc V1 with Nice!Nano v2, OLED displays, and RGB underglow.
 
 ## Keymap (4 layers)
 
+![Default Keymap](./keymap-drawer/sofle.svg)
+
 ### Layer 0: BASE
 ```
 |   `   |  1   |  2   |  3   |  4   |  5   |                     |  6   |  7   |  8   |  9   |  0   | DELETE|
