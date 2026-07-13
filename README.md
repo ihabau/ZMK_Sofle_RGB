@@ -16,7 +16,7 @@ Wireless Sofle Choc V1 with Nice!Nano v2, OLED displays, and RGB underglow.
 | SHIFT |  Z   |  X   |  C   |  V   |  B   | RGB TOG |  |        |  N   |  M   |  ,   |  .   |  /   | SHIFT |
                    | GUI | ALT  | CTRL | LOWER|  ENTER  |  | SPACE | RAISE| CTRL | ALT  | GUI  |
 ```
-Encoder: Left = Vol Up/Down, Right = RGB On/Off (click)
+Encoder: Left = Vol Down/Up (reversed), Right = RGB On/Off (click)
 
 ### Layer 1: LOWER (hold LOWER)
 ```
