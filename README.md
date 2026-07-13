@@ -38,21 +38,17 @@ Encoder: Left = Vol Down/Up (reversed), Right = RGB On/Off (click)
 
 ### Layer 3: ADJUST (hold LOWER + RAISE)
 ```
-|  HUI  |  SAI |  BRI |  EFF |  SPI |  TOG |                     |      |      |      |      |      |       |
-| EXTPWR|  HUD |  SAD |  BRD |  EFR |  SPD |                     |      |      |      |      |      |       |
-|       |      |      |      |      |      |                     |      |      |      |      |      |       |
-|       |      |      |      |      |      |         |  |        |      |      |      |      |      |       |
-                   |      |      |      |      |         |  |        |      |      |      |      |
+|  EFF  |  EFR  |  SPI  |  SPD  |  TOG  | EXTPWR|                     |      |      |      |      |      |       |
+|  HUI  |  SAI  |  BRI  |       |       |       |                     |      |      |      |      |      |       |
+|  HUD  |  SAD  |  BRD  |       |       |       |                     |      |      |      |      |      |       |
+|       |       |       |       |       |       |         |  |        |      |      |      |      |      |       |
+                   |       |       |       |       |         |  |        |      |      |      |      |
 ```
 
 **Adjust legend:**
-- HUI/HUD = Hue Up/Down
-- SAI/SAD = Saturation Up/Down
-- BRI/BRD = Brightness Up/Down
-- EFF/EFR = Effect Forward/Reverse (rainbow, breathe, etc.)
-- SPI/SPD = Speed Up/Down
-- TOG = RGB On/Off
-- EP_TOG = External Power On/Off
+- Row 1 (controls): EFF/EFR = Effect Forward/Reverse, SPI/SPD = Speed Up/Down, TOG = RGB On/Off, EP_TOG = External Power
+- Row 2 (increase): HUI = Hue Up, SAI = Saturation Up, BRI = Brightness Up
+- Row 3 (decrease): HUD = Hue Down, SAD = Saturation Down, BRD = Brightness Down
 
 ## OLED Display
 Both halves show a custom vertical OLED layout with:

@@ -125,33 +125,33 @@ layers:
   - {t: ▽, type: trans}
   - {t: ▽, type: trans}
   adjust:
+  - RGB EFF
+  - RGB EFR
+  - RGB SPI
+  - RGB SPD
+  - RGB TOG
+  - EP TOG
+  - ''
+  - ''
+  - ''
+  - ''
+  - ''
+  - ''
   - RGB HUI
   - RGB SAI
   - RGB BRI
-  - RGB EFF
-  - RGB SPI
-  - RGB TOG
   - ''
   - ''
   - ''
   - ''
   - ''
   - ''
-  - EP TOG
+  - ''
+  - ''
+  - ''
   - RGB HUD
   - RGB SAD
   - RGB BRD
-  - RGB EFR
-  - RGB SPD
-  - ''
-  - ''
-  - ''
-  - ''
-  - ''
-  - ''
-  - ''
-  - ''
-  - ''
   - ''
   - ''
   - ''
