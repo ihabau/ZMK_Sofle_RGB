@@ -54,7 +54,7 @@ layers:
   - LGUI
   - LALT
   - LCTRL
-  - {t: BSPC, h: '1'}
+  - {t: BSPC, h: lower}
   - RET
   - SPACE
   - raise
@@ -115,7 +115,7 @@ layers:
   - '&studio_unlock'
   - {t: ▽, type: trans}
   - {t: ▽, type: trans}
-  - {t: ▽, type: trans}
+  - {type: held}
   - {t: ▽, type: trans}
   - {t: ▽, type: trans}
   - {t: ▽, type: trans}
@@ -237,7 +237,7 @@ layers:
   - ''
   - ''
   - ''
-  - ''
+  - {type: held}
   - ''
   - ''
   - {type: held}
