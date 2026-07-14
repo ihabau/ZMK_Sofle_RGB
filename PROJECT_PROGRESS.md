@@ -3,152 +3,166 @@
 ## Project Overview
 
 **Hardware:** PandaKB Sofle Choc V1 (Nice!Nano v2)
-**Firmware:** ZMK (darknao/zmk fork with per-key RGB support)
-**Last Updated:** 2026-07-12
+**Firmware:** ZMK v0.3.0 (zmkfirmware/zmk)
+**Git User:** ihab Al Ubaidi / www.ihabau@gmail.com
+**Repository:** https://github.com/ihabau/ZMK_Sofle_RGB
+**Last Updated:** 2026-07-14
 
 ---
 
 ## Goals
 
-1. ✅ **4 Layers** - QWERTY, Lower, Raise, Adjust
-2. ✅ **Per-Key RGB** - Individual LED per switch on pin D0 (P0.08)
-3. ✅ **LCD on Both Sides** - Bongo cat, WPM, battery indicator, BLE/USB indicator, layer indicator
-4. ✅ **GitHub Build Workflow** - Automated firmware builds
+1. ✅ **4 Layers** - BASE, LOWER, RAISE, ADJUST (conditional layer)
+2. ✅ **RGB Underglow** - WS2812 on pin D0 (P0.08), 29 LEDs per side, GRB color order
+3. ✅ **OLED Display** - nice_oled on both halves (bongo cat, WPM, battery, BLE/USB, layer)
+4. ✅ **GitHub Actions CI/CD** - Automated firmware builds with release artifacts
+5. ✅ **Mouse Emulation** - Right encoder scroll via `&msc` behavior
+6. ✅ **Encoder Controls** - Left encoder: volume, Right encoder: mouse scroll, Click: Enter
 
 ---
 
 ## Configuration Files
 
 ### 1. `config/west.yml`
-- **Changed:** ZMK remote from `zmkfirmware/zmk` to `darknao/zmk`
-- **Branch:** `rgb-layer-25.08` (per-key RGB support)
-- **Modules:** zmk-nice-oled (unchanged)
+- **ZMK remote:** `zmkfirmware/zmk` at tag `v0.3.0`
+- **Module:** `mctechnology17/zmk-nice-oled` (main branch)
+- **Note:** NOT darknao fork (incompatible with Sofle shield)
 
 ### 2. `config/sofle.conf`
-- **Added:** `CONFIG_EXPERIMENTAL_RGB_LAYER=y` (enables per-key RGB)
-- **Added:** `CONFIG_ZMK_BEHAVIORS_QUEUE_SIZE=256` (required for underglow-layer)
-- **Retained:** All display and nice_oled widget configs
+- `CONFIG_EC11=y` + `CONFIG_EC11_TRIGGER_GLOBAL_THREAD=y` (encoder)
+- `CONFIG_ZMK_RGB_UNDERGLOW=y` (WS2812 underglow)
+- `CONFIG_ZMK_DISPLAY=y` + `CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y` (OLED)
+- `CONFIG_NICE_OLED_WIDGET_HID_INDICATORS=y` + `CONFIG_ZMK_HID_INDICATORS=y` (CapsLock on OLED, USB only)
+- `CONFIG_ZMK_POINTING=y` (mouse emulation for encoder scroll)
+- `CONFIG_ZMK_STUDIO_LOCKING=n`
 
 ### 3. `config/sofle.keymap`
-- **Added:** `#include <dt-bindings/zmk/rgb_colors.h>`
-- **Added:** `underglow-layer` devicetree node with per-layer color mappings:
-  - **Base (0):** RED
-  - **Lower (1):** GREEN
-  - **Raise (2):** BLUE
-  - **Adjust (3):** PURPLE
-- **Note:** LED count = 29 (matches chain-length in overlay)
+- Custom `scroll_encoder` behavior: `zmk,behavior-sensor-rotate` wrapping `&msc SCRL_DOWN`/`SCRL_UP`
+- `tap-ms = <250>` on scroll encoder (prevents too-short triggers)
+- `#define ZMK_POINTING_DEFAULT_SCRL_VAL 140` placed BEFORE `#include pointing.h` (scroll speed)
+- Conditional layer: ADJUST activated when LOWER + RAISE held simultaneously
+- Left encoder: volume (`&inc_dec_kp C_VOL_DN C_VOL_UP`)
+- Right encoder: mouse scroll (`&scroll_encoder`)
+- Left center thumb: Mute (`&kp C_MUTE`)
+- Right center thumb: Enter (`&kp RET`)
+- LOWER key: tap=Backspace, hold=LOWER layer (`&lt LOWER BSPC`)
 
 ### 4. `.github/workflows/build.yml`
-- **Changed:** Custom build workflow (can't use zmkfirmware's reusable workflow with fork)
-- **Builds:** Left half, Right half, Settings reset
-- **Artifacts:** Uploads .uf2 files to GitHub Releases
+- Triggers on push to `main` branch
+- Uses `zmkfirmware/zmk/.github/workflows/build-user-config.yml@v0.3`
+- Creates GitHub Release with `.uf2` firmware files
 
-### 5. `config/boards/nice_nano_v2.overlay`
-- **Unchanged:** SPI3 on P0.08, WS2812, chain-length = 29, GRB color order
+### 5. `build.yaml`
+- Left half: `nice_nano_v2` + `sofle_left nice_oled` + Studio
+- Right half: `nice_nano_v2` + `sofle_right nice_oled`
+- Settings reset: `nice_nano_v2` + `settings_reset`
+
+### 6. `config/boards/nice_nano_v2.overlay`
+- SPI3 on P0.08 (WS2812 data pin)
+- chain-length = 29, GRB color mapping
+
+---
+
+## Keymap Layout (4 Layers)
+
+### BASE (Layer 0)
+| Row 0 | GRAVE | 1 | 2 | 3 | 4 | 5 | | 6 | 7 | 8 | 9 | 0 | DELETE |
+| Row 1 | ESC | Q | W | E | R | T | | Y | U | I | O | P | BSPC |
+| Row 2 | TAB | A | S | D | F | G | | H | J | K | L | SEMI | SQT |
+| Row 3 | SHIFT | Z | X | C | V | B | **MUTE** | **ENTER** | N | M | COMMA | DOT | FSLH | SHIFT |
+| Row 4 | | GUI | ALT | CTRL | LOWER/BSPC | ENTER | | SPACE | RAISE | CTRL | ALT | GUI |
+
+### LOWER (Layer 1) - Numbers, F-keys, symbols
+- Row 0: F1-F11
+- Row 1: GRAVE, 1-0, F12
+- Row 2: shifted symbols (!, @, #, $, %, ^, &, *, (, ), PIPE)
+- Row 3: =, -, +, [, ], ;, :, \
+
+### RAISE (Layer 2) - BT, navigation, clipboard
+- Row 0: BT_CLR, BT1-BT5
+- Row 1: INS, PSCRN, GUI, PG_UP
+- Row 2: ALT, CTRL, SHIFT, PG_DN, arrows, DEL, BSPC
+- Row 3: UNDO, CUT, COPY, PASTE
+
+### ADJUST (Layer 3) - RGB controls (LOWER + RAISE)
+- Row 0: EFF, EFR, SPI, SPD, TOG, EP_TOG
+- Row 1: HUI, SAI, BRI (increase hue/sat/brightness)
+- Row 2: HUD, SAD, BRD (decrease hue/sat/brightness)
 
 ---
 
 ## Build Instructions
 
 ### GitHub Actions (Recommended)
-1. Push to `master` branch
+1. Push to `main` branch
 2. Workflow runs automatically
 3. Download firmware from Releases tab:
    - `sofle_left.uf2` - Left half
    - `sofle_right.uf2` - Right half
    - `settings_reset.uf2` - Reset settings
 
-### Local Build
-```bash
-# Initialize west
-pip3 install west
-west init -l config
-west update
-west zephyr-export
+### Flashing
+1. Double-click Nice!Nano reset button (enters bootloader mode)
+2. Drag `.uf2` file to mass storage device
+3. Device reboots automatically
+4. **After enabling `CONFIG_ZMK_POINTING=y`:** Forget + re-pair Bluetooth (HID descriptor changed)
 
-# Build left half
-west build -s zmk/app -b nice_nano_v2 -- \
-  -DSHIELD="sofle_left nice_oled" \
-  -DCONFIG_ZMK_STUDIO=y
+---
 
-# Build right half
-west build -s zmk/app -b nice_nano_v2 -- \
-  -DSHIELD="sofle_right nice_oled"
+## Git Remote Configuration
 
-# Build settings reset
-west build -s zmk/app -b nice_nano_v2 -- \
-  -DSHIELD="settings_reset"
 ```
-
----
-
-## Flashing Instructions
-
-### Prerequisites
-- Install ZMK.uf2 or use web flasher at https://zmk.dev/flash
-- Put Nice!Nano in bootloader mode (double-click reset button)
-
-### Flash Process
-1. Connect Nice!Nano via USB
-2. Double-click reset button (enters bootloader mode)
-3. Drag .uf2 file to the mass storage device
-4. Device will reboot automatically
-
-### First Flash
-- Flash **settings_reset.uf2** first to clear old settings
-- Then flash the appropriate half firmware
-
----
-
-## Per-Key RGB Colors
-
-| Layer | Color | Hex |
-|-------|-------|-----|
-| Base (0) | RED | `0xFF0000` |
-| Lower (1) | GREEN | `0x00FF00` |
-| Raise (2) | BLUE | `0x0000FF` |
-| Adjust (3) | PURPLE | `0x800080` |
-
-### Available Colors
-`RED`, `GREEN`, `BLUE`, `PURPLE`, `TEAL`, `ORANGE`, `PINK`, `YELLOW`, `WHITE`, `OFF`
-
-### Activating Per-Key Mode
-After flashing, use `&rgb_ug RGB_EFF` to cycle effects until "layer indicators" mode is active.
+origin  -> https://github.com/ergomechstore/sofle-v2-zmk.git (upstream, rarely used)
+myrepo  -> https://github.com/ihabau/ZMK_Sofle_RGB.git (primary, push target)
+```
 
 ---
 
 ## Progress Log
 
 ### 2026-07-12
-- ✅ Switched to darknao/zmk fork for per-key RGB support
-- ✅ Updated west.yml manifest
-- ✅ Added per-key RGB config to sofle.conf
-- ✅ Added underglow-layer definitions to keymap
-- ✅ Created custom GitHub Actions build workflow
-- ✅ Updated build.yaml
-- ✅ Created this progress document
+- ✅ Created repository from ergomechstore/sofle-v2-zmk template
+- ✅ Configured 4-layer keymap (BASE, LOWER, RAISE, ADJUST)
+- ✅ Set up nice_oled module for OLED displays
+- ✅ Enabled HID indicators (CapsLock on OLED, USB only)
+- ✅ Created GitHub Actions build workflow
+- ✅ Reversed volume encoder direction
+- ✅ Redesigned ADJUST layer with RGB controls
+
+### 2026-07-13
+- ✅ Moved RGB toggle from key to ADJUST layer
+- ✅ Changed LOWER key to layer-tap (tap=BSPC, hold=LOWER)
+- ✅ Left center thumb = Mute, Right center thumb = RGB Toggle
+- ✅ Regenerated keymap SVG via keymap-drawer
+- ✅ Updated README with 4-layer layout, OLED info, flashing instructions
+
+### 2026-07-14
+- ✅ Enabled mouse emulation (`CONFIG_ZMK_POINTING=y`)
+- ✅ Added custom `scroll_encoder` behavior with `&msc` (mouse scroll)
+- ✅ Added `tap-ms = <250>` to prevent too-short encoder triggers
+- ✅ Added `#define ZMK_POINTING_DEFAULT_SCRL_VAL 140` for scroll speed
+- ✅ **Fixed critical bug:** Moved `#define` BEFORE `#include pointing.h` (macros were using default=10)
+- ✅ Changed right encoder click from RGB_TOG to Enter (`&kp RET`)
+- ✅ Committed and pushed: `1f648bf`
 
 ---
 
-## Known Issues
+## Known Issues & Limitations
 
-1. **LED Count:** The underglow-layer bindings have 58 entries but chain-length is 29. Need to verify actual per-key LED count on PCB.
-2. **Color Customization:** Colors can be changed in keymap by editing the `&ug COLOR` values.
-
----
-
-## Next Steps
-
-1. **Verify LED Count:** Confirm actual number of per-key LEDs on Sofle Choc V1 PCB
-2. **Test Build:** Push to GitHub and verify workflow builds successfully
-3. **Flash & Test:** Flash firmware and verify per-key RGB works
-4. **Customize Colors:** Adjust layer colors to preference
+1. **Per-key RGB:** Abandoned — darknao/zmk fork incompatible with Sofle shield, ZMK v0.3.0 has no per-key RGB support
+2. **Static color presets:** ZMK has no behavior to set a specific RGB color (only incremental HUI/HUD, SAI/SAD, BRI/BRD)
+3. **HID indicators (CapsLock):** Only work over USB, not BLE — ZMK firmware limitation
+4. **BLE profiles 2/3 switching:** May require re-pairing (forgets and re-connects fix it)
+5. **Mouse emulation BLE:** After enabling `CONFIG_ZMK_POINTING=y`, must re-pair Bluetooth (HID descriptor changes)
+6. **Encoder GPIO pins:** Shield defines pins based on standard Sofle PCB; PandaKB variant may differ (verify if issues arise)
 
 ---
 
 ## Resources
 
 - [ZMK Documentation](https://zmk.dev/docs)
-- [darknao/zmk Per-Key RGB](https://github.com/darknao/zmk/tree/rgb-layer-25.08)
-- [Sofle Keyboard Build Guide](https://josefadamcik.github.io/SofleKeyboard/build_guide_choc.html)
-- [ZMK Flashing Guide](https://zmk.dev/docs/features/flashing)
+- [ZMK v0.3.0](https://github.com/zmkfirmware/zmk/tree/v0.3.0)
+- [mctechnology17/zmk-nice-oled](https://github.com/mctechnology17/zmk-nice-oled)
+- [ZMK Pointing/Mouse](https://zmk.dev/docs/features/pointing)
+- [ZMK Sensor Bindings](https://zmk.dev/docs/config/keymap#sensor-bindings)
+- [GitHub Issue #72: Sensor rotate tap-ms](https://github.com/zmkfirmware/zmk/issues/72)
