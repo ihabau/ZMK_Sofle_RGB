@@ -6,7 +6,7 @@
 **Firmware:** ZMK v0.3.0 (zmkfirmware/zmk)
 **Git User:** ihab Al Ubaidi / www.ihabau@gmail.com
 **Repository:** https://github.com/ihabau/ZMK_Sofle_RGB
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-07-16
 
 ---
 
@@ -17,7 +17,7 @@
 3. ✅ **OLED Display** - nice_oled on both halves (bongo cat, WPM, battery, BLE/USB, layer)
 4. ✅ **GitHub Actions CI/CD** - Automated firmware builds with release artifacts
 5. ✅ **Mouse Emulation** - Right encoder scroll via `&msc` behavior
-6. ✅ **Encoder Controls** - Left encoder: volume, Right encoder: mouse scroll, Click: Enter
+6. ✅ **Encoder Controls** - Left encoder: volume, Right encoder: mouse scroll, Right click: RGB toggle
 
 ---
 
@@ -39,12 +39,12 @@
 ### 3. `config/sofle.keymap`
 - Custom `scroll_encoder` behavior: `zmk,behavior-sensor-rotate` wrapping `&msc SCRL_DOWN`/`SCRL_UP`
 - `tap-ms = <250>` on scroll encoder (prevents too-short triggers)
-- `#define ZMK_POINTING_DEFAULT_SCRL_VAL 140` placed BEFORE `#include pointing.h` (scroll speed)
+- `#define ZMK_POINTING_DEFAULT_SCRL_VAL 10` placed BEFORE `#include pointing.h` (scroll speed)
 - Conditional layer: ADJUST activated when LOWER + RAISE held simultaneously
 - Left encoder: volume (`&inc_dec_kp C_VOL_DN C_VOL_UP`)
 - Right encoder: mouse scroll (`&scroll_encoder`)
 - Left center thumb: Mute (`&kp C_MUTE`)
-- Right center thumb: Enter (`&kp RET`)
+- Right center thumb: RGB Toggle (`&rgb_ug RGB_TOG`)
 - LOWER key: tap=Backspace, hold=LOWER layer (`&lt LOWER BSPC`)
 
 ### 4. `.github/workflows/build.yml`
@@ -69,7 +69,7 @@
 | Row 0 | GRAVE | 1 | 2 | 3 | 4 | 5 | | 6 | 7 | 8 | 9 | 0 | DELETE |
 | Row 1 | ESC | Q | W | E | R | T | | Y | U | I | O | P | BSPC |
 | Row 2 | TAB | A | S | D | F | G | | H | J | K | L | SEMI | SQT |
-| Row 3 | SHIFT | Z | X | C | V | B | **MUTE** | **ENTER** | N | M | COMMA | DOT | FSLH | SHIFT |
+| Row 3 | SHIFT | Z | X | C | V | B | **MUTE** | **RGB TOG** | N | M | COMMA | DOT | FSLH | SHIFT |
 | Row 4 | | GUI | ALT | CTRL | LOWER/BSPC | ENTER | | SPACE | RAISE | CTRL | ALT | GUI |
 
 ### LOWER (Layer 1) - Numbers, F-keys, symbols
@@ -142,8 +142,15 @@ myrepo  -> https://github.com/ihabau/ZMK_Sofle_RGB.git (primary, push target)
 - ✅ Added `tap-ms = <250>` to prevent too-short encoder triggers
 - ✅ Added `#define ZMK_POINTING_DEFAULT_SCRL_VAL 140` for scroll speed
 - ✅ **Fixed critical bug:** Moved `#define` BEFORE `#include pointing.h` (macros were using default=10)
-- ✅ Changed right encoder click from RGB_TOG to Enter (`&kp RET`)
-- ✅ Committed and pushed: `1f648bf`
+- ✅ Changed right encoder click to Enter, then back to RGB Toggle
+- ✅ Committed and pushed: `1f648bf`, `81aab7b`, `7772667`
+
+### 2026-07-16
+- ✅ Fixed right encoder hardware (ground and diode weren't connected)
+- ✅ Confirmed both scroll and click work after hardware fix
+- ✅ Tested scroll speed values: 140 (too fast), 2 (too weak/didn't register), 10 (ZMK default, working)
+- ✅ Final scroll speed set to 10 (ZMK default)
+- ✅ Right encoder click confirmed working as RGB Toggle
 
 ---
 
@@ -154,7 +161,6 @@ myrepo  -> https://github.com/ihabau/ZMK_Sofle_RGB.git (primary, push target)
 3. **HID indicators (CapsLock):** Only work over USB, not BLE — ZMK firmware limitation
 4. **BLE profiles 2/3 switching:** May require re-pairing (forgets and re-connects fix it)
 5. **Mouse emulation BLE:** After enabling `CONFIG_ZMK_POINTING=y`, must re-pair Bluetooth (HID descriptor changes)
-6. **Encoder GPIO pins:** Shield defines pins based on standard Sofle PCB; PandaKB variant may differ (verify if issues arise)
 
 ---
 
